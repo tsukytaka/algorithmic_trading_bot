@@ -362,6 +362,7 @@ def query_historic_data(symbol, timeframe, number_of_candles):
     # Convert to a dataframe
     dataframe = pandas.DataFrame(rates)
     # Add a 'Human Time' column
+    print("dataframe: ", dataframe)
     dataframe['human_time'] = pandas.to_datetime(dataframe['time'], unit='s')
     return dataframe
 

@@ -1,5 +1,4 @@
 import mt5_lib
-import binance_lib
 
 
 # Function to calculate FOREX lot size on MT5
@@ -86,10 +85,6 @@ def get_data(symbol, timeframe, exchange="mt5", ):
     if exchange == "mt5":
         # Get the data
         data = mt5_lib.get_candlesticks(symbol=symbol, timeframe=timeframe, number_of_candles=1000)
-    elif exchange == "binance":
-        # Get the data
-        data = binance_lib.get_candlesticks(symbol=symbol, timeframe=timeframe, number_of_candles=1000)
-    # If unsupported exchange queried, raise an error
     else:
         raise ValueError("Exchange not supported")
     # Return the data

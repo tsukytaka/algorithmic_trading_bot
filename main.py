@@ -5,12 +5,12 @@ import pandas
 
 import time
 
-import backtest_lib
+# import backtest_lib
 import display_lib
 import indicator_lib
 import mt5_lib
-from strategies import macd_crossover_strategy
-import binance_lib
+# from strategies import macd_crossover_strategy
+import ema_cross_strategy
 
 # Location of settings.json
 settings_filepath = "settings.json" # <- This can be modified to be your own settings filepath
@@ -66,34 +66,48 @@ if __name__ == '__main__':
     # Import settings.json
     project_settings = get_project_settings(import_filepath=settings_filepath)
     # Start MT5
-    # mt5_start = mt5_startup(project_settings=project_settings)
-    pandas.set_option('display.max_columns', None)
+    mt5_start = mt5_startup(project_settings=project_settings)
+    # pandas.set_option('display.max_columns', None)
     comment = "ema_cross_strategy"
     # Start a Performance timer
     perf_start = time.perf_counter()
     # Try making a trade
-    """
-    trade = binance_lib.place_order(
-        order_type="BUY_STOP",
-        symbol="BTCUSDT",
-        quantity=0.008,
-        stop_loss=25000,
-        stop_price=35000,
-        take_profit=40000,
-        comment=comment,
-        project_settings=project_settings
-    )
-    
-    # Get a list of all open orders
-    open_orders = binance_lib.get_open_orders(project_settings=project_settings, symbol="BTCUSDT")
-    print(open_orders)
-    """
-    cancel_order = binance_lib.cancel_order(
-        symbol="BTCUSDT",
-        order_id="20763567766",
-        project_settings=project_settings
-    )
-    print(cancel_order)
+    symbol_for_strategy = project_settings['mt5']['symbols'][0]
+    print("symbol_for_strategy: ", symbol_for_strategy)
+    # Set up a previous time variable
+    previous_time = 0
+    # Set up a current time variable
+    current_time = 0
+    # Start a while loop to poll MT5
+    while True:
+        # Retrieve the current candle data
+        candle_data = mt5_lib.query_historic_data(symbol=symbol_for_strategy,timeframe=project_settings['mt5']['timeframe'], number_of_candles=1)
+        # Extract the timedata
+        current_time = candle_data.iloc[0]['time']
+        # Compare against previous time
+        if current_time != previous_time:
+            # Notify user
+            print("New Candle")
+            # Update previous time
+            previous_time = current_time
+            # Retrieve previous orders
+            orders = mt5_lib.get_all_open_orders()
+            # Start strategy one on selected symbol
+            trade_outcome = ema_cross_strategy.ema_cross_strategy(symbol=symbol_for_strategy, timeframe=project_settings['mt5']['timeframe'],
+                                  ema_one=50, ema_two=200)
+            
+            # Cancel orders
+            if trade_outcome:
+                for order in orders:
+                    mt5_lib.cancel_order(order)
+        # else:
+        #     # Get positions
+        #     positions = mt5_interface.get_open_positions()
+        #     # Pass positions to update_trailing_stop
+        #     for position in positions:
+        #         ema_cross_strategy.update_trailing_stop(order=position, trailing_stop_pips=10,
+        #                                       pip_size=project_settings['pip_size'])
+        time.sleep(0.1)
 
 
 
